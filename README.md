@@ -38,7 +38,7 @@ app.run()
 
 The `div` containing "Loading..." get an additional div, which is the full HTML of the app's `layout`. For the above app, it ends up like this:
 
-```html:highlight={5-7}
+```html
 <div id="react-entry-point">
     <div class="_dash-loading">
         Loading...
