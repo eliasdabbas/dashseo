@@ -3,6 +3,7 @@ HTML regex, from Regex Cookbook 2nd edition
 https://learning.oreilly.com/library/view/regular-expressions-cookbook/9781449327453/ch09s02.html
 """
 import re
+import json
 import textwrap
 import sys
 
@@ -197,13 +198,14 @@ def markdown_to_html(md_text, extensions=md_extensions):
     return markdown.markdown(textwrap.dedent(link_standalone_urls),
                              extensions=extensions)
 
-def htmlify(app_layout):
-    """Create an HTML string from the app's layout.
+
+def htmlify(app, jsonld=None):
+    """Create an HTML string of the app's layout, and include it in the page's source.
     
     Parameters
     ----------
-    app_layout : dash.Dash.layout
-      The layout attribute of an already created Dash app
+    app : dash.Dash
+      An instance of a Dash app.
 
     Example
     -------
@@ -216,35 +218,32 @@ def htmlify(app_layout):
         html.H2("How are you today?")
     ])
 
-    app.index_string = htmlify(app.layout)
+    htmlify(app)
+
+    app.run()
 
     Returns
     -------
-    dash.Dash.index_string : str
-      The app's index string template modified to include the HTML string representing
-      it's layout.
+    None : It modifies the `dash.dash._app_entry` attribute by inserting the HTML
+      string of the app's layout
     """
-    index_template =  f"""
-    <!DOCTYPE html>
-    <html>
-        <head>
-            {{%metas%}}
-            <title>{{%title%}}</title>
-            {{%favicon%}}
-            {{%css%}}
-        </head>
-        <body>
-            <!--[if IE]><script>
-            alert("Dash v2.7+ does not support Internet Explorer. Please use a newer browser.");
-            </script><![endif]-->
-            {{%app_entry%}}
-            <div hidden>{convert_to_html(app_layout)}</div>
-            <footer>
-                {{%config%}}
-                {{%scripts%}}
-                {{%renderer%}}
-            </footer>
-        </body>
-    </html>
+    import dash
+    dash.dash._app_entry = f"""
+    <div id="react-entry-point">
+        <div class="_dash-loading">
+            Loading...
+        </div>
+    {convert_to_html(app.layout)}
+    </div>
     """
-    return index_template
+    if jsonld is not None:
+        if not isinstance(jsonld, (str, dict)):
+            raise ValueError("The JSON-LD parameter should either be a string or dict")
+        if isinstance(jsonld, dict):
+            app.index_string = app.index_string.replace(
+                '</head>',
+                f'<script type="application/ld+json">\n{json.dumps(jsonld, indent=3)}\n</script>\n    </head>')
+        if isinstance(jsonld, str):
+            app.index_string = app.index_string.replace(
+                '</head>', f'{jsonld}\n    </head>')
+    return
