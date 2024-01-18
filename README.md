@@ -6,7 +6,7 @@ A set of tools to make Dash apps SEO-friendly.
 
 Dash is renderd as a single page app, as a set of React components. The HTML representation is not available like a traditional page, and app content an be difficult to read by search engines. 
 
-The solution is to convert the app's HTML components in the `layout` attribute to an HTML string, and include it in the `app.index_string`.
+The solution is to convert the app's HTML components in the `layout` attribute to an HTML string, and include it in the app's source.
 
 ## Features
 
@@ -29,14 +29,27 @@ app.layout = html.Div([
 ])
 
 # You only need to add this:
-app.index_string = htmlify(app.layout)
+htmlify(app)
 
 app.run()
 
 ```
+## What just happened?
 
-## Issues
+The `div` containing "Loading..." get an additional div, which is the full HTML of the app's `layout`. For the above app, it ends up like this:
 
-The current solution causes a duplication of the HTML of the page. The hacky solution is
-to place the second copy in a hidden div (not good for search engines). Looking for a 
-better way to hide the second copy.
+```html:highlight={5-7}
+<div id="react-entry-point">
+    <div class="_dash-loading">
+        Loading...
+    </div>
+    <div>
+        <h1>hello, world</h1>
+    </div>
+</div>
+
+```
+
+## Limitations
+
+The current solution works only for simple apps (not using pages).
